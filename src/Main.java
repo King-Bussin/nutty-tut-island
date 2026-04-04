@@ -52,7 +52,7 @@ public class Main extends AbstractScript {
         "Use Anvil", "Smith Dagger", "Walk to Gate", "Talk to Combat Instructor",
         "Open Equipment", "More Info", "Equip Dagger", "Talk to Instructor",
         "Equip Sword+Shield", "Open Combat Tab", "Enter Rat Pen", "Kill Rat",
-        "Exit Rat Pen", "Equip Ranged", "Climb Ladder",
+        "Exit Rat Pen", "Equip Ranged", "Kill Rat (Ranged)", "Climb Ladder",
         "Use Bank", "Close Bank + Poll", "Open Door", "Talk to Account Guide",
         "Open Account Tab", "Talk to Account Guide", "Walk Through Door",
         "Talk to Brother Brace", "Open Prayer Tab", "Talk to Brother Brace",
@@ -64,7 +64,7 @@ public class Main extends AbstractScript {
         1, 2, 3, 7, 10, 20, 30, 40, 50, 60, 70, 80, 90,
         120, 130, 140, 150, 160, 170, 200, 210, 220, 230, 240,
         250, 260, 270, 300, 310, 320, 330, 340, 350, 360, 370,
-        390, 400, 405, 410, 420, 430, 440, 460, 470, 480, 500,
+        390, 400, 405, 410, 420, 430, 440, 460, 470, 480, 490, 500,
         510, 520, 525, 530, 531, 532, 540, 550, 560, 570,
         610, 620, 630, 640, 650, 671, 680, 1000
     };
@@ -798,13 +798,37 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                Inventory.interact(841, "Wield");
-                gaussianSleep(650, 150, 350);
-                Inventory.interact(882, "Wield");
+                if (!Equipment.contains(841)) {
+                    Inventory.interact(841, "Wield");
+                    gaussianSleep(650, 150, 350);
+                }
+                if (!Equipment.contains(882)) {
+                    Inventory.interact(882, "Wield");
+                    gaussianSleep(650, 150, 350);
+                }
                 Sleep.sleepUntil(() -> Equipment.contains(841) && Equipment.contains(882), 5000);
+                Logger.log("[DEBUG] case 480: bow=" + Equipment.contains(841) + ", arrows=" + Equipment.contains(882));
                 if (NPCs.closest(3313) == null) { Logger.log("[DEBUG] case 480: rat null"); break; }
                 NPCs.closest(3313).interact("Attack");
                 Sleep.sleepUntil(() -> Players.getLocal().isInCombat(), 10000);
+                gaussianSleep(1200, 350, 350);
+                break;
+
+            case 490: // Kill rat with ranged
+                Logger.log("[DEBUG] case 490: Kill rat with ranged");
+                if (Dialogues.inDialogue()) {
+                    Dialogues.clickContinue();
+                    gaussianSleep(550, 120, 350);
+                }
+                if (!Players.getLocal().isInCombat()) {
+                    if (!Equipment.contains(841)) {
+                        Inventory.interact(841, "Wield");
+                        gaussianSleep(650, 150, 350);
+                    }
+                    if (NPCs.closest(3313) == null) { Logger.log("[DEBUG] case 490: rat null"); break; }
+                    NPCs.closest(3313).interact("Attack");
+                    Sleep.sleepUntil(() -> Players.getLocal().isInCombat(), 5000);
+                }
                 gaussianSleep(1200, 350, 350);
                 break;
 
