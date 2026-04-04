@@ -16,7 +16,9 @@ import org.dreambot.api.methods.widget.Widgets;
 import org.dreambot.api.methods.interactive.Players;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.api.utilities.Sleep;
+import org.dreambot.api.input.Mouse;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
@@ -37,6 +39,9 @@ public class Main extends AbstractScript {
     private Area survivalArea = new Area(3105, 3093, 3100, 3098);
     private long startTime;
     private String currentAction = "Starting...";
+    private int antiBanCount = 0;
+    private String lastAntiBan = "None";
+    private long lastAntiBanTime = 0;
     private int lastVarp = 0;
 
     private static final int FINAL_VARP = 1000;
@@ -88,8 +93,10 @@ public class Main extends AbstractScript {
             }
         }
 
-        if (random.nextInt(100) < 30) {
+        if (random.nextInt(100) < 45) {
             performAntiBan();
+        } else if (random.nextInt(100) < 25) {
+            mouseDrift();
         }
 
         switch (varp) {
@@ -209,6 +216,7 @@ public class Main extends AbstractScript {
                 NPCs.closest(3317).interact("Net");
                 while (Inventory.count("Raw shrimps") == 0) {
                     gaussianSleep(3000, 500, 2000);
+                    if (random.nextInt(100) < 40) mouseDrift();
                     performAntiBan();
                 }
                 gaussianSleep(1200, 350, 350);
@@ -253,6 +261,7 @@ public class Main extends AbstractScript {
                 tree70.interact("Chop down");
                 while (Inventory.count("Logs") == 0) {
                     gaussianSleep(3000, 500, 2000);
+                    if (random.nextInt(100) < 40) mouseDrift();
                     performAntiBan();
                 }
                 gaussianSleep(1200, 350, 350);
@@ -639,7 +648,16 @@ public class Main extends AbstractScript {
 
             case 370: // Talk to combat instructor
                 Logger.log("[DEBUG] case 370: Talk to combat instructor");
-                if (NPCs.closest(3307) == null) { Logger.log("[DEBUG] case 370: NPC null"); break; }
+                if (NPCs.closest(3307) == null) {
+                    Logger.log("[DEBUG] case 370: NPC null, walking closer");
+                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                    Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
+                    break;
+                }
+                if (!NPCs.closest(3307).isOnScreen()) {
+                    Camera.rotateToEntity(NPCs.closest(3307));
+                    gaussianSleep(700, 150, 350);
+                }
                 NPCs.closest(3307).interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
                 while (Dialogues.inDialogue()) {
@@ -684,13 +702,33 @@ public class Main extends AbstractScript {
 
             case 410: // Close interface and talk to Combat Instructor again
                 Logger.log("[DEBUG] case 410: Close interface + talk Combat Instructor");
+                if (Dialogues.inDialogue()) {
+                    Dialogues.clickContinue();
+                    gaussianSleep(1000, 250, 350);
+                }
                 if (Widgets.get(84, 3, 0) != null && Widgets.get(84, 3, 0).isVisible()) {
                     Widgets.get(84, 3, 11).interact();
                     gaussianSleep(550, 120, 350);
                 }
-                if (NPCs.closest(3307) == null) { Logger.log("[DEBUG] case 410: NPC null"); break; }
+                if (NPCs.closest(3307) == null) {
+                    Logger.log("[DEBUG] case 410: NPC null, walking closer");
+                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                    Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
+                    break;
+                }
+                if (!NPCs.closest(3307).isOnScreen()) {
+                    Logger.log("[DEBUG] case 410: NPC off screen, rotating camera");
+                    Camera.rotateToEntity(NPCs.closest(3307));
+                    gaussianSleep(700, 150, 350);
+                }
+                if (NPCs.closest(3307) == null || !NPCs.closest(3307).isOnScreen()) {
+                    Logger.log("[DEBUG] case 410: NPC still off screen, walking closer");
+                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                    Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
+                    break;
+                }
                 NPCs.closest(3307).interact("Talk-to");
-                Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
+                Sleep.sleepUntil(() -> Dialogues.inDialogue(), 5000);
                 while (Dialogues.inDialogue()) {
                     if (PlayerSettings.getConfig(281) != varp) break;
                     if (Dialogues.canContinue()) {
@@ -774,7 +812,16 @@ public class Main extends AbstractScript {
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 6000);
                     gaussianSleep(700, 150, 350);
                 }
-                if (NPCs.closest(3307) == null) { Logger.log("[DEBUG] case 470: NPC null"); break; }
+                if (NPCs.closest(3307) == null) {
+                    Logger.log("[DEBUG] case 470: NPC null, walking closer");
+                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                    Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
+                    break;
+                }
+                if (!NPCs.closest(3307).isOnScreen()) {
+                    Camera.rotateToEntity(NPCs.closest(3307));
+                    gaussianSleep(700, 150, 350);
+                }
                 NPCs.closest(3307).interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
                 while (Dialogues.inDialogue()) {
@@ -1193,7 +1240,18 @@ public class Main extends AbstractScript {
                     }
                 }
                 Logger.log("Tutorial Island completed!");
-                gaussianSleep(1200, 350, 350);
+                gaussianSleep(2000, 500, 1000);
+                currentAction = "Complete! Logging out...";
+                Logger.log("Logging out and stopping script...");
+                if (Widgets.get(164, 34) != null) {
+                    Widgets.get(164, 34).interact();
+                    gaussianSleep(1000, 250, 350);
+                }
+                if (Widgets.get(182, 8) != null) {
+                    Widgets.get(182, 8).interact();
+                    gaussianSleep(3000, 500, 2000);
+                }
+                stop();
                 break;
 
             default:
@@ -1201,7 +1259,7 @@ public class Main extends AbstractScript {
                 break;
         }
 
-        return (int) Math.max(4500 + random.nextGaussian() * 1200, 2000);
+        return (int) Math.max(600 + random.nextGaussian() * 200, 350);
     }
 
     private void drawLogo(Graphics2D g2, int x, int y) {
@@ -1246,9 +1304,9 @@ public class Main extends AbstractScript {
         double progress = (double) currentStep / totalSteps;
 
         int x = 10;
-        int y = 245;
+        int y = 200;
         int w = 240;
-        int h = 120;
+        int h = 138;
 
         // Main panel background
         g2.setColor(new Color(15, 15, 15, 200));
@@ -1301,9 +1359,29 @@ public class Main extends AbstractScript {
         g2.setColor(new Color(0, 200, 83));
         g2.drawString((int)(progress * 100) + "%", x + w - 38, y + 92);
 
+        // Anti-ban row
+        g2.setFont(new Font("Arial", Font.PLAIN, 11));
+        g2.setColor(new Color(120, 120, 120));
+        g2.drawString("AB", x + 12, y + 108);
+        g2.setColor(new Color(255, 180, 50));
+        String abText;
+        if (lastAntiBanTime == 0) {
+            abText = "None yet";
+        } else {
+            long ago = (System.currentTimeMillis() - lastAntiBanTime) / 1000;
+            abText = lastAntiBan + " (" + ago + "s ago)";
+        }
+        String displayAb = abText.length() > 26 ? abText.substring(0, 26) + ".." : abText;
+        g2.drawString(displayAb, x + 60, y + 108);
+
+        // Anti-ban count on the right
+        g2.setFont(new Font("Arial", Font.BOLD, 11));
+        g2.setColor(new Color(255, 180, 50));
+        g2.drawString("#" + antiBanCount, x + w - 38, y + 108);
+
         // Progress bar
         int barX = x + 12;
-        int barY = y + 100;
+        int barY = y + 118;
         int barW = w - 24;
         int barH = 10;
         g2.setColor(new Color(40, 40, 40));
@@ -1331,6 +1409,7 @@ public class Main extends AbstractScript {
         Logger.log("  Last Varp:  " + lastVarp);
         Logger.log("  Progress:   " + currentStep + "/" + STEP_VARPS.length + " (" + (int)((double) currentStep / STEP_VARPS.length * 100) + "%)");
         Logger.log("  Last Action: " + currentAction);
+        Logger.log("  Anti-ban:   " + antiBanCount + " actions");
         if (lastVarp >= 1000) {
             Logger.log("  Status:     COMPLETED!");
         } else {
@@ -1346,11 +1425,47 @@ public class Main extends AbstractScript {
 
     private void performAntiBan() {
         int roll = random.nextInt(100);
-        if (roll < 15) {
+        if (roll < 10) {
+            logAntiBan("Camera rotate");
             Camera.rotateTo(random.nextInt(360), random.nextInt(60) + 320);
-        } else if (roll < 22) {
+        } else if (roll < 17) {
+            logAntiBan("Camera nudge");
             Camera.rotateTo(Camera.getYaw() + random.nextInt(60) - 30, Camera.getPitch() + random.nextInt(20) - 10);
+        } else if (roll < 27) {
+            logAntiBan("Mouse jiggle");
+            mouseJiggle();
+        } else if (roll < 32) {
+            logAntiBan("Mouse off screen");
+            Mouse.moveOutsideScreen();
+            gaussianSleep(2500, 800, 1000);
+            mouseJiggle();
         }
+    }
+
+    private void logAntiBan(String action) {
+        Logger.log("[ANTI-BAN] " + action);
+        lastAntiBan = action;
+        lastAntiBanTime = System.currentTimeMillis();
+        antiBanCount++;
+    }
+
+    private void mouseJiggle() {
+        Point pos = Mouse.getPosition();
+        int dx = random.nextInt(30) - 15;
+        int dy = random.nextInt(30) - 15;
+        int newX = Math.max(5, Math.min(760, pos.x + dx));
+        int newY = Math.max(5, Math.min(500, pos.y + dy));
+        Mouse.move(new Point(newX, newY));
+    }
+
+    private void mouseDrift() {
+        logAntiBan("Mouse drift");
+        Point pos = Mouse.getPosition();
+        int dx = random.nextInt(10) - 5;
+        int dy = random.nextInt(10) - 5;
+        int newX = Math.max(5, Math.min(760, pos.x + dx));
+        int newY = Math.max(5, Math.min(500, pos.y + dy));
+        Mouse.move(new Point(newX, newY));
     }
 
     private int handleCharacterCreation() {
