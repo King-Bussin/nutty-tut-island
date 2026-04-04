@@ -6,6 +6,8 @@ import org.dreambot.api.methods.dialogues.Dialogues;
 import org.dreambot.api.methods.interactive.GameObjects;
 import org.dreambot.api.methods.interactive.NPCs;
 import org.dreambot.api.wrappers.interactive.GameObject;
+import org.dreambot.api.wrappers.interactive.NPC;
+import org.dreambot.api.wrappers.widgets.WidgetChild;
 import org.dreambot.api.methods.container.impl.Inventory;
 import org.dreambot.api.methods.container.impl.equipment.Equipment;
 import org.dreambot.api.methods.map.Area;
@@ -39,6 +41,8 @@ public class Main extends AbstractScript {
 
     private Random random = new Random();
     private Area survivalArea = new Area(3105, 3093, 3100, 3098);
+    private Area fishingArea = new Area(3101, 3097, 3104, 3094);
+    private Area combatInstructorArea = new Area(3104, 9508, 3107, 9505);
     private long startTime;
     private String currentAction = "Starting...";
     private int antiBanCount = 0;
@@ -49,8 +53,10 @@ public class Main extends AbstractScript {
     private HumanMouseAlgorithm mouseAlgo;
     private boolean varpJustChanged = false;
     private long completionTime = -1;
-    private int ironmanMode = 0; // 0=normal, 1=ironman, 2=hardcore, 3=ultimate
+    private int ironmanMode = 0; // 0=normal, 1=ironman
 
+    private static final int SCREEN_W = 765;
+    private static final int SCREEN_H = 503;
     private static final int FINAL_VARP = 1000;
     private static final String[] STEP_NAMES = {
         "Character Creation", "Talk to Gielinor Guide", "Open Settings", "Talk to Guide Again",
@@ -141,11 +147,12 @@ public class Main extends AbstractScript {
             }
         }
 
-        if (random.nextInt(100) < 45) {
+        int abRoll = random.nextInt(1000);
+        if (abRoll < 450) {
             performAntiBan();
-        } else if (random.nextInt(100) < 25) {
+        } else if (abRoll < 700) {
             mouseDrift();
-        } else if (random.nextInt(1000) < 8) {
+        } else if (abRoll < 708) {
             shortAFK();
         }
 
@@ -156,21 +163,12 @@ public class Main extends AbstractScript {
 
             case 2: // Talk to Gielinor Guide
                 preActionHesitation();
-                if (NPCs.closest(3308) == null) break;
-                NPCs.closest(3308).interact("Talk-to");
+                NPC guide2 = NPCs.closest(3308);
+                if (guide2 == null) break;
+                if (!guide2.isOnScreen()) { Camera.rotateToEntity(guide2); gaussianSleep(700, 150, 350); }
+                guide2.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -180,28 +178,20 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 41) == null) break;
-                Widgets.get(164, 41).interact();
+                WidgetChild settings3 = Widgets.get(164, 41);
+                if (settings3 == null) break;
+                settings3.interact();
                 postActionSleep();
                 break;
 
             case 7: // Talk to Gielinor Guide again
                 preActionHesitation();
-                if (NPCs.closest(3308) == null) break;
-                NPCs.closest(3308).interact("Talk-to");
+                NPC guide7 = NPCs.closest(3308);
+                if (guide7 == null) break;
+                if (!guide7.isOnScreen()) { Camera.rotateToEntity(guide7); gaussianSleep(700, 150, 350); }
+                guide7.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -225,28 +215,20 @@ public class Main extends AbstractScript {
 
             case 20: // Walk to Survival Instructor and talk
                 preActionHesitation();
-                while (!survivalArea.contains(Players.getLocal())) {
+                long walkStart20 = System.currentTimeMillis();
+                while (!survivalArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart20 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(survivalArea.getRandomTile());
                     }
                     gaussianSleep(1200, 300, 600);
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                 }
-                if (NPCs.closest(8503) == null) break;
-                NPCs.closest(8503).interact("Talk-to");
+                NPC survival20 = NPCs.closest(8503);
+                if (survival20 == null) break;
+                if (!survival20.isOnScreen()) { Camera.rotateToEntity(survival20); gaussianSleep(700, 150, 350); }
+                survival20.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -255,32 +237,34 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 55) == null) break;
-                Widgets.get(164, 55).interact();
+                WidgetChild inv30 = Widgets.get(164, 55);
+                if (inv30 == null) break;
+                inv30.interact();
                 postActionSleep();
                 break;
 
             case 40: // Fish a shrimp
                 preActionHesitation();
-                if (NPCs.closest(3317) == null) {
-                    Area fishingArea40 = new Area(3101, 3097, 3104, 3094);
-                    if (!Players.getLocal().isMoving()) Walking.walk(fishingArea40.getRandomTile());
+                NPC fishSpot40 = NPCs.closest(3317);
+                if (fishSpot40 == null) {
+                    if (!Players.getLocal().isMoving()) Walking.walk(fishingArea.getRandomTile());
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                     break;
                 }
-                if (!NPCs.closest(3317).isOnScreen()) {
-                    Camera.rotateToEntity(NPCs.closest(3317));
+                if (!fishSpot40.isOnScreen()) {
+                    Camera.rotateToEntity(fishSpot40);
                     gaussianSleep(700, 150, 350);
                 }
-                if (NPCs.closest(3317) == null) break;
-                NPCs.closest(3317).interact("Net");
+                fishSpot40.interact("Net");
                 long fishStart40 = System.currentTimeMillis();
-                while (Inventory.count("Raw shrimps") == 0 && System.currentTimeMillis() - fishStart40 < 30000) {
-                    gaussianSleep(3000, 500, 2000);
+                while (Inventory.count("Raw shrimps") == 0 && PlayerSettings.getConfig(281) == varp && System.currentTimeMillis() - fishStart40 < 30000) {
+                    gaussianSleep(1500, 400, 800);
+                    if (PlayerSettings.getConfig(281) != varp) break;
                     if (!Players.getLocal().isAnimating() && !Players.getLocal().isMoving()) {
-                        if (NPCs.closest(3317) != null) {
-                            if (!NPCs.closest(3317).isOnScreen()) Camera.rotateToEntity(NPCs.closest(3317));
-                            NPCs.closest(3317).interact("Net");
+                        NPC respot40 = NPCs.closest(3317);
+                        if (respot40 != null) {
+                            if (!respot40.isOnScreen()) Camera.rotateToEntity(respot40);
+                            respot40.interact("Net");
                         }
                         gaussianSleep(2000, 500, 1000);
                     }
@@ -292,28 +276,20 @@ public class Main extends AbstractScript {
 
             case 50: // Open Skills tab
                 preActionHesitation();
-                if (Widgets.get(164, 53) == null) break;
-                Widgets.get(164, 53).interact();
+                WidgetChild skills50 = Widgets.get(164, 53);
+                if (skills50 == null) break;
+                skills50.interact();
                 postActionSleep();
                 break;
 
             case 60: // Talk to Survival Instructor again
                 preActionHesitation();
-                if (NPCs.closest(8503) == null) break;
-                NPCs.closest(8503).interact("Talk-to");
+                NPC survival60 = NPCs.closest(8503);
+                if (survival60 == null) break;
+                if (!survival60.isOnScreen()) { Camera.rotateToEntity(survival60); gaussianSleep(700, 150, 350); }
+                survival60.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -326,7 +302,8 @@ public class Main extends AbstractScript {
                 GameObject tree70 = GameObjects.closest(9730);
                 if (tree70 == null) break;
                 tree70.interact("Chop down");
-                while (Inventory.count("Logs") == 0) {
+                long chopStart70 = System.currentTimeMillis();
+                while (Inventory.count("Logs") == 0 && System.currentTimeMillis() - chopStart70 < 15000) {
                     gaussianSleep(3000, 500, 2000);
                     if (random.nextInt(100) < 40) mouseDrift();
                     performAntiBan();
@@ -407,21 +384,12 @@ public class Main extends AbstractScript {
 
             case 140: // Talk to Cooking Instructor
                 preActionHesitation();
-                if (NPCs.closest(3305) == null) break;
-                NPCs.closest(3305).interact("Talk-to");
+                NPC chef140 = NPCs.closest(3305);
+                if (chef140 == null) break;
+                if (!chef140.isOnScreen()) { Camera.rotateToEntity(chef140); gaussianSleep(700, 150, 350); }
+                chef140.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -476,8 +444,9 @@ public class Main extends AbstractScript {
 
             case 200: // Click run energy
                 preActionHesitation();
-                if (Widgets.get(160, 28) == null) break;
-                Widgets.get(160, 28).interact();
+                WidgetChild run200 = Widgets.get(160, 28);
+                if (run200 == null) break;
+                run200.interact();
                 postActionSleep();
                 break;
 
@@ -488,7 +457,8 @@ public class Main extends AbstractScript {
                     gaussianSleep(450, 100, 350);
                 }
                 Area questGuideArea = new Area(3088, 3126, 3082, 3128);
-                while (!questGuideArea.contains(Players.getLocal())) {
+                long walkStart210 = System.currentTimeMillis();
+                while (!questGuideArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart210 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(questGuideArea.getRandomTile());
                     }
@@ -509,21 +479,12 @@ public class Main extends AbstractScript {
 
             case 220: // Talk to Quest Guide
                 preActionHesitation();
-                if (NPCs.closest(3312) == null) break;
-                NPCs.closest(3312).interact("Talk-to");
+                NPC quest220 = NPCs.closest(3312);
+                if (quest220 == null) break;
+                if (!quest220.isOnScreen()) { Camera.rotateToEntity(quest220); gaussianSleep(700, 150, 350); }
+                quest220.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -533,28 +494,20 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 54) == null) break;
-                Widgets.get(164, 54).interact();
+                WidgetChild quest230 = Widgets.get(164, 54);
+                if (quest230 == null) break;
+                quest230.interact();
                 postActionSleep();
                 break;
 
             case 240: // Talk to Quest Guide again
                 preActionHesitation();
-                if (NPCs.closest(3312) == null) break;
-                NPCs.closest(3312).interact("Talk-to");
+                NPC quest240 = NPCs.closest(3312);
+                if (quest240 == null) break;
+                if (!quest240.isOnScreen()) { Camera.rotateToEntity(quest240); gaussianSleep(700, 150, 350); }
+                quest240.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -576,44 +529,25 @@ public class Main extends AbstractScript {
             case 260: // Talk to mining instructor
                 preActionHesitation();
                 Area miningArea = new Area(3078, 9507, 3085, 9501);
-                while (!miningArea.contains(Players.getLocal())) {
+                long walkStart260 = System.currentTimeMillis();
+                while (!miningArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart260 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(miningArea.getRandomTile());
                     }
                     gaussianSleep(1200, 300, 600);
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                 }
-                if (NPCs.closest(3311) == null) break;
-                NPCs.closest(3311).interact("Talk-to");
+                NPC miner260 = NPCs.closest(3311);
+                if (miner260 == null) break;
+                if (!miner260.isOnScreen()) { Camera.rotateToEntity(miner260); gaussianSleep(700, 150, 350); }
+                miner260.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
             case 270: // Continue mining instructor dialogue
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -662,21 +596,12 @@ public class Main extends AbstractScript {
 
             case 330: // Talk to mining instructor again
                 preActionHesitation();
-                if (NPCs.closest(3311) == null) break;
-                NPCs.closest(3311).interact("Talk-to");
+                NPC miner330 = NPCs.closest(3311);
+                if (miner330 == null) break;
+                if (!miner330.isOnScreen()) { Camera.rotateToEntity(miner330); gaussianSleep(700, 150, 350); }
+                miner330.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -700,8 +625,9 @@ public class Main extends AbstractScript {
 
             case 350: // Smith the bronze dagger
                 preActionHesitation();
-                if (Widgets.get(312, 9) != null) {
-                    Widgets.get(312, 9).interact("Smith");
+                WidgetChild smith350 = Widgets.get(312, 9);
+                if (smith350 != null) {
+                    smith350.interact("Smith");
                     Sleep.sleepUntil(() -> Inventory.contains("Bronze dagger"), 10000);
                 }
                 postActionSleep();
@@ -710,7 +636,8 @@ public class Main extends AbstractScript {
             case 360: // Move to next area and open gate
                 preActionHesitation();
                 Area smithingExit = new Area(3093, 9503, 3091, 9502);
-                while (!smithingExit.contains(Players.getLocal())) {
+                long walkStart360 = System.currentTimeMillis();
+                while (!smithingExit.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart360 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(smithingExit.getRandomTile());
                     }
@@ -731,29 +658,19 @@ public class Main extends AbstractScript {
 
             case 370: // Talk to combat instructor
                 preActionHesitation();
-                if (NPCs.closest(3307) == null) {
-                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                NPC combat370 = NPCs.closest(3307);
+                if (combat370 == null) {
+                    Walking.walk(combatInstructorArea.getRandomTile());
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                     break;
                 }
-                if (!NPCs.closest(3307).isOnScreen()) {
-                    Camera.rotateToEntity(NPCs.closest(3307));
+                if (!combat370.isOnScreen()) {
+                    Camera.rotateToEntity(combat370);
                     gaussianSleep(700, 150, 350);
                 }
-                NPCs.closest(3307).interact("Talk-to");
+                combat370.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -763,15 +680,17 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 56) == null) break;
-                Widgets.get(164, 56).interact();
+                WidgetChild equip390 = Widgets.get(164, 56);
+                if (equip390 == null) break;
+                equip390.interact();
                 postActionSleep();
                 break;
 
             case 400: // Equipped - More Info button
                 preActionHesitation();
-                if (Widgets.get(387, 1) == null) break;
-                Widgets.get(387, 1).interact();
+                WidgetChild info400 = Widgets.get(387, 1);
+                if (info400 == null) break;
+                info400.interact();
                 postActionSleep();
                 break;
 
@@ -791,34 +710,24 @@ public class Main extends AbstractScript {
                     Widgets.get(84, 3, 11).interact();
                     dialoguePause();
                 }
-                if (NPCs.closest(3307) == null) {
-                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                NPC combat410 = NPCs.closest(3307);
+                if (combat410 == null) {
+                    Walking.walk(combatInstructorArea.getRandomTile());
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                     break;
                 }
-                if (!NPCs.closest(3307).isOnScreen()) {
-                    Camera.rotateToEntity(NPCs.closest(3307));
+                if (!combat410.isOnScreen()) {
+                    Camera.rotateToEntity(combat410);
                     gaussianSleep(700, 150, 350);
                 }
-                if (NPCs.closest(3307) == null || !NPCs.closest(3307).isOnScreen()) {
-                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                if (!combat410.isOnScreen()) {
+                    Walking.walk(combatInstructorArea.getRandomTile());
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                     break;
                 }
-                NPCs.closest(3307).interact("Talk-to");
+                combat410.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 5000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -836,15 +745,17 @@ public class Main extends AbstractScript {
 
             case 430: // Open Combat tab
                 preActionHesitation();
-                if (Widgets.get(164, 52) == null) break;
-                Widgets.get(164, 52).interact();
+                WidgetChild combat430 = Widgets.get(164, 52);
+                if (combat430 == null) break;
+                combat430.interact();
                 postActionSleep();
                 break;
 
             case 440: // Go in rat pen and attack a rat
                 preActionHesitation();
                 Area ratPen = new Area(3111, 9520, 3113, 9517);
-                while (!ratPen.contains(Players.getLocal())) {
+                long walkStart440 = System.currentTimeMillis();
+                while (!ratPen.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart440 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(ratPen.getRandomTile());
                     }
@@ -853,13 +764,17 @@ public class Main extends AbstractScript {
                 }
                 GameObject gate440 = GameObjects.closest(9720);
                 if (gate440 != null) {
-                    gate440.interact("Open");
+                    if (!gate440.interact("Open")) {
+                        gaussianSleep(800, 200, 350);
+                        gate440.interact("Open");
+                    }
                     Sleep.sleepUntil(() -> Players.getLocal().isMoving(), 3000);
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 6000);
                     gaussianSleep(700, 150, 350);
                 }
-                if (NPCs.closest(3313) == null) break;
-                NPCs.closest(3313).interact("Attack");
+                NPC rat440 = NPCs.closest(3313);
+                if (rat440 == null) break;
+                rat440.interact("Attack");
                 Sleep.sleepUntil(() -> Players.getLocal().isInCombat(), 5000);
                 postActionSleep();
                 break;
@@ -870,14 +785,19 @@ public class Main extends AbstractScript {
                     dialoguePause();
                 }
                 if (!Players.getLocal().isInCombat()) {
-                    if (NPCs.closest(3313) == null) break;
-                    NPCs.closest(3313).interact("Attack");
+                    NPC rat460 = NPCs.closest(3313);
+                    if (rat460 == null) break;
+                    rat460.interact("Attack");
                     Sleep.sleepUntil(() -> Players.getLocal().isInCombat(), 5000);
+                }
+                if (Players.getLocal().isInCombat()) {
+                    Sleep.sleepUntil(() -> !Players.getLocal().isInCombat() || PlayerSettings.getConfig(281) != varp, 15000);
                 }
                 postActionSleep();
                 break;
 
             case 470: // Pass back through gate and talk to Combat Instructor
+                preActionHesitation();
                 GameObject gate470 = GameObjects.closest(9720);
                 if (gate470 != null) {
                     gate470.interact("Open");
@@ -885,29 +805,19 @@ public class Main extends AbstractScript {
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 6000);
                     gaussianSleep(700, 150, 350);
                 }
-                if (NPCs.closest(3307) == null) {
-                    Walking.walk(new Area(3104, 9508, 3107, 9505).getRandomTile());
+                NPC combat470 = NPCs.closest(3307);
+                if (combat470 == null) {
+                    Walking.walk(combatInstructorArea.getRandomTile());
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                     break;
                 }
-                if (!NPCs.closest(3307).isOnScreen()) {
-                    Camera.rotateToEntity(NPCs.closest(3307));
+                if (!combat470.isOnScreen()) {
+                    Camera.rotateToEntity(combat470);
                     gaussianSleep(700, 150, 350);
                 }
-                NPCs.closest(3307).interact("Talk-to");
+                combat470.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -919,15 +829,21 @@ public class Main extends AbstractScript {
                 }
                 if (!Equipment.contains(841)) {
                     Inventory.interact(841, "Wield");
-                    gaussianSleep(650, 150, 350);
+                    Sleep.sleepUntil(() -> Equipment.contains(841), 3000);
+                    gaussianSleep(400, 100, 350);
                 }
                 if (!Equipment.contains(882)) {
                     Inventory.interact(882, "Wield");
-                    gaussianSleep(650, 150, 350);
+                    Sleep.sleepUntil(() -> Equipment.contains(882), 3000);
+                    gaussianSleep(400, 100, 350);
                 }
-                Sleep.sleepUntil(() -> Equipment.contains(841) && Equipment.contains(882), 5000);
-                if (NPCs.closest(3313) == null) break;
-                NPCs.closest(3313).interact("Attack");
+                if (!Equipment.contains(882)) {
+                    Inventory.interact(882, "Wield");
+                    Sleep.sleepUntil(() -> Equipment.contains(882), 3000);
+                }
+                NPC rat480 = NPCs.closest(3313);
+                if (rat480 == null) break;
+                rat480.interact("Attack");
                 long combatStart480 = System.currentTimeMillis();
                 while (!Players.getLocal().isInCombat() && System.currentTimeMillis() - combatStart480 < 12000) {
                     gaussianSleep(2000, 500, 1000);
@@ -944,11 +860,21 @@ public class Main extends AbstractScript {
                 if (!Players.getLocal().isInCombat()) {
                     if (!Equipment.contains(841)) {
                         Inventory.interact(841, "Wield");
-                        gaussianSleep(650, 150, 350);
+                        Sleep.sleepUntil(() -> Equipment.contains(841), 3000);
+                        gaussianSleep(400, 100, 350);
                     }
-                    if (NPCs.closest(3313) == null) break;
-                    NPCs.closest(3313).interact("Attack");
+                    if (!Equipment.contains(882)) {
+                        Inventory.interact(882, "Wield");
+                        Sleep.sleepUntil(() -> Equipment.contains(882), 3000);
+                        gaussianSleep(400, 100, 350);
+                    }
+                    NPC rat490 = NPCs.closest(3313);
+                    if (rat490 == null) break;
+                    rat490.interact("Attack");
                     Sleep.sleepUntil(() -> Players.getLocal().isInCombat(), 5000);
+                }
+                if (Players.getLocal().isInCombat()) {
+                    Sleep.sleepUntil(() -> !Players.getLocal().isInCombat() || PlayerSettings.getConfig(281) != varp, 15000);
                 }
                 postActionSleep();
                 break;
@@ -956,7 +882,8 @@ public class Main extends AbstractScript {
             case 500: // Travel up ladder
                 preActionHesitation();
                 Area ladderArea = new Area(3110, 9528, 3112, 9522);
-                while (!ladderArea.contains(Players.getLocal())) {
+                long walkStart500 = System.currentTimeMillis();
+                while (!ladderArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart500 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(ladderArea.getRandomTile());
                     }
@@ -975,7 +902,8 @@ public class Main extends AbstractScript {
             case 510: // Run inside bank area and click bank booth
                 preActionHesitation();
                 Area bankArea = new Area(3119, 3124, 3124, 3120);
-                while (!bankArea.contains(Players.getLocal())) {
+                long walkStart510 = System.currentTimeMillis();
+                while (!bankArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart510 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(bankArea.getRandomTile());
                     }
@@ -1000,18 +928,7 @@ public class Main extends AbstractScript {
                     pollBooth520.interact("Use");
                     dialoguePause();
                     Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                    while (Dialogues.inDialogue()) {
-                        if (PlayerSettings.getConfig(281) != varp) break;
-                        if (Dialogues.canContinue()) {
-                            Dialogues.clickContinue();
-                            dialoguePause();
-                        } else if (Dialogues.getOptions() != null) {
-                            Dialogues.chooseOption(1);
-                            dialoguePause();
-                        } else {
-                            gaussianSleep(450, 80, 350);
-                        }
-                    }
+                    handleDialogue(varp);
                 }
                 postActionSleep();
                 break;
@@ -1036,21 +953,12 @@ public class Main extends AbstractScript {
 
             case 530: // Talk to Account Guide
                 preActionHesitation();
-                if (NPCs.closest(3310) == null) break;
-                NPCs.closest(3310).interact("Talk-to");
+                NPC account530 = NPCs.closest(3310);
+                if (account530 == null) break;
+                if (!account530.isOnScreen()) { Camera.rotateToEntity(account530); gaussianSleep(700, 150, 350); }
+                account530.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -1060,27 +968,19 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 39) == null) break;
-                Widgets.get(164, 39).interact();
+                WidgetChild acctTab531 = Widgets.get(164, 39);
+                if (acctTab531 == null) break;
+                acctTab531.interact();
                 postActionSleep();
                 break;
 
             case 532: // Talk to Account Guide again
-                if (NPCs.closest(3310) == null) break;
-                NPCs.closest(3310).interact("Talk-to");
+                NPC account532 = NPCs.closest(3310);
+                if (account532 == null) break;
+                if (!account532.isOnScreen()) { Camera.rotateToEntity(account532); gaussianSleep(700, 150, 350); }
+                account532.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -1105,28 +1005,20 @@ public class Main extends AbstractScript {
             case 550: // Run to chapel and talk to Brother Brace
                 preActionHesitation();
                 Area chapelArea = new Area(3122, 3108, 3127, 3105);
-                while (!chapelArea.contains(Players.getLocal())) {
+                long walkStart550 = System.currentTimeMillis();
+                while (!chapelArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart550 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(chapelArea.getRandomTile());
                     }
                     gaussianSleep(1200, 300, 600);
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                 }
-                if (NPCs.closest(3319) == null) break;
-                NPCs.closest(3319).interact("Talk-to");
+                NPC brace550 = NPCs.closest(3319);
+                if (brace550 == null) break;
+                if (!brace550.isOnScreen()) { Camera.rotateToEntity(brace550); gaussianSleep(700, 150, 350); }
+                brace550.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -1136,28 +1028,20 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 57) == null) break;
-                Widgets.get(164, 57).interact();
+                WidgetChild prayer560 = Widgets.get(164, 57);
+                if (prayer560 == null) break;
+                prayer560.interact();
                 postActionSleep();
                 break;
 
             case 570: // Talk to Brother Brace again
                 preActionHesitation();
-                if (NPCs.closest(3319) == null) break;
-                NPCs.closest(3319).interact("Talk-to");
+                NPC brace570 = NPCs.closest(3319);
+                if (brace570 == null) break;
+                if (!brace570.isOnScreen()) { Camera.rotateToEntity(brace570); gaussianSleep(700, 150, 350); }
+                brace570.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -1182,28 +1066,20 @@ public class Main extends AbstractScript {
             case 620: // Run to Magic Instructor and talk
                 preActionHesitation();
                 Area magicInstructorArea = new Area(3134, 3089, 3141, 3085);
-                while (!magicInstructorArea.contains(Players.getLocal())) {
+                long walkStart620 = System.currentTimeMillis();
+                while (!magicInstructorArea.contains(Players.getLocal()) && System.currentTimeMillis() - walkStart620 < 30000) {
                     if (!Players.getLocal().isMoving()) {
                         Walking.walk(magicInstructorArea.getRandomTile());
                     }
                     gaussianSleep(1200, 300, 600);
                     Sleep.sleepUntil(() -> !Players.getLocal().isMoving(), 5000);
                 }
-                if (NPCs.closest(3309) == null) break;
-                NPCs.closest(3309).interact("Talk-to");
+                NPC magic620 = NPCs.closest(3309);
+                if (magic620 == null) break;
+                if (!magic620.isOnScreen()) { Camera.rotateToEntity(magic620); gaussianSleep(700, 150, 350); }
+                magic620.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -1213,28 +1089,20 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(164, 58) == null) break;
-                Widgets.get(164, 58).interact();
+                WidgetChild magicTab630 = Widgets.get(164, 58);
+                if (magicTab630 == null) break;
+                magicTab630.interact();
                 postActionSleep();
                 break;
 
             case 640: // Talk to Magic Instructor again
                 preActionHesitation();
-                if (NPCs.closest(3309) == null) break;
-                NPCs.closest(3309).interact("Talk-to");
+                NPC magic640 = NPCs.closest(3309);
+                if (magic640 == null) break;
+                if (!magic640.isOnScreen()) { Camera.rotateToEntity(magic640); gaussianSleep(700, 150, 350); }
+                magic640.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
-                while (Dialogues.inDialogue()) {
-                    if (PlayerSettings.getConfig(281) != varp) break;
-                    if (Dialogues.canContinue()) {
-                        Dialogues.clickContinue();
-                        dialoguePause();
-                    } else if (Dialogues.getOptions() != null) {
-                        Dialogues.chooseOption(1);
-                        dialoguePause();
-                    } else {
-                        gaussianSleep(450, 80, 350);
-                    }
-                }
+                handleDialogue(varp);
                 postActionSleep();
                 break;
 
@@ -1244,11 +1112,25 @@ public class Main extends AbstractScript {
                     Dialogues.clickContinue();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (Widgets.get(218, 12) != null && Widgets.get(218, 12).interact()) {
+                WidgetChild windStrike650 = Widgets.get(218, 12);
+                if (windStrike650 != null && windStrike650.interact()) {
                     gaussianSleep(1000, 250, 350);
-                    if (NPCs.closest(3316) != null) {
-                        NPCs.closest(3316).interact("Cast");
-                        Sleep.sleepUntil(() -> Players.getLocal().isInCombat(), 10000);
+                    NPC chicken650 = NPCs.closest(3316);
+                    if (chicken650 != null) {
+                        chicken650.interact("Cast");
+                        long castStart650 = System.currentTimeMillis();
+                        while (!Players.getLocal().isInCombat() && System.currentTimeMillis() - castStart650 < 12000) {
+                            gaussianSleep(2000, 500, 1000);
+                            if (!Players.getLocal().isInCombat()) {
+                                NPC rechicken650 = NPCs.closest(3316);
+                                if (rechicken650 != null) {
+                                    WidgetChild recast650 = Widgets.get(218, 12);
+                                    if (recast650 != null) recast650.interact();
+                                    gaussianSleep(1000, 250, 350);
+                                    rechicken650.interact("Cast");
+                                }
+                            }
+                        }
                     }
                 }
                 postActionSleep();
@@ -1260,8 +1142,10 @@ public class Main extends AbstractScript {
                     Widgets.get(153, 16).interact();
                     gaussianSleep(1000, 250, 350);
                 }
-                if (NPCs.closest(3309) == null) break;
-                NPCs.closest(3309).interact("Talk-to");
+                NPC magic671 = NPCs.closest(3309);
+                if (magic671 == null) break;
+                if (!magic671.isOnScreen()) { Camera.rotateToEntity(magic671); gaussianSleep(700, 150, 350); }
+                magic671.interact("Talk-to");
                 Sleep.sleepUntil(() -> Dialogues.inDialogue(), 3000);
                 while (Dialogues.inDialogue()) {
                     if (PlayerSettings.getConfig(281) != varp) break;
@@ -1372,116 +1256,141 @@ public class Main extends AbstractScript {
             if (STEP_VARPS[i] <= lastVarp) currentStep = i + 1;
         }
         double progress = (double) currentStep / totalSteps;
+        int pct = (int)(progress * 100);
 
-        int x = 10;
-        int y = 164;
-        int w = 240;
-        int h = 170;
+        int x = 6;
+        int y = 152;
+        int w = 258;
+        int h = 186;
+        int pad = 12;
 
-        // Main panel background
-        g2.setColor(new Color(15, 15, 15, 200));
-        g2.fillRoundRect(x, y, w, h, 12, 12);
+        // ── PANEL ──
+        g2.setColor(new Color(0, 0, 0, 50));
+        g2.fillRoundRect(x + 3, y + 3, w, h, 14, 14);
+        g2.setColor(new Color(10, 10, 10, 225));
+        g2.fillRoundRect(x, y, w, h, 14, 14);
+        g2.setStroke(new BasicStroke(1f));
+        g2.setColor(new Color(180, 120, 50, 100));
+        g2.drawRoundRect(x, y, w, h, 14, 14);
 
-        // Border with subtle glow
-        g2.setStroke(new BasicStroke(1.5f));
-        g2.setColor(new Color(180, 120, 50, 60));
-        g2.drawRoundRect(x - 1, y - 1, w + 2, h + 2, 13, 13);
-        g2.setColor(new Color(180, 120, 50, 140));
-        g2.drawRoundRect(x, y, w, h, 12, 12);
-
-        // Logo
-        drawLogo(g2, x + 8, y + 6);
-
-        // Brand text next to logo
-        g2.setFont(new Font("Arial", Font.BOLD, 18));
-        g2.setColor(new Color(200, 140, 60));
-        g2.drawString("NUTTY", x + 50, y + 22);
+        // ── HEADER ──
+        drawLogo(g2, x + pad - 2, y + 7);
+        g2.setFont(new Font("Arial", Font.BOLD, 17));
+        g2.setColor(new Color(215, 155, 65));
+        g2.drawString("NUTTY", x + 48, y + 23);
         g2.setFont(new Font("Arial", Font.PLAIN, 10));
         g2.setColor(new Color(140, 140, 140));
-        g2.drawString("Tutorial Island", x + 50, y + 34);
-        g2.setColor(new Color(90, 90, 90));
-        g2.drawString("by NutmegDan", x + 140, y + 34);
+        g2.drawString("Tutorial Island", x + 48, y + 35);
+        g2.setColor(new Color(75, 75, 75));
+        g2.drawString("by NutmegDan", x + 138, y + 35);
 
-        // Divider line
-        g2.setColor(new Color(60, 60, 60));
-        g2.setStroke(new BasicStroke(1f));
-        g2.drawLine(x + 10, y + 44, x + w - 10, y + 44);
-
-        // Info rows
-        g2.setFont(new Font("Arial", Font.PLAIN, 11));
-
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("Time", x + 12, y + 60);
-        g2.setColor(Color.WHITE);
-        g2.drawString(timeStr, x + 60, y + 60);
-
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("Action", x + 12, y + 76);
-        g2.setColor(Color.WHITE);
-        String displayAction = currentAction.length() > 22 ? currentAction.substring(0, 22) + ".." : currentAction;
-        g2.drawString(displayAction, x + 60, y + 76);
-
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("Step", x + 12, y + 92);
-        g2.setColor(Color.WHITE);
-        g2.drawString(currentStep + " / " + totalSteps, x + 60, y + 92);
-
-        // Percentage on the right
-        g2.setFont(new Font("Arial", Font.BOLD, 11));
-        g2.setColor(new Color(0, 200, 83));
-        g2.drawString((int)(progress * 100) + "%", x + w - 38, y + 92);
-
-        // Varp row
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("Varp", x + 12, y + 108);
-        g2.setColor(new Color(130, 180, 255));
-        g2.drawString(String.valueOf(lastVarp), x + 60, y + 108);
-
-        // Mode on the right
-        g2.setFont(new Font("Arial", Font.BOLD, 11));
-        g2.setColor(ironmanMode == 1 ? new Color(150, 150, 150) : new Color(100, 100, 100));
-        g2.drawString(ironmanMode == 1 ? "Ironman" : "Normal", x + w - 55, y + 108);
-        g2.setFont(new Font("Arial", Font.PLAIN, 11));
-
-        // Mouse profile row
-        g2.setFont(new Font("Arial", Font.PLAIN, 11));
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("Mouse", x + 12, y + 124);
-        g2.setColor(new Color(180, 130, 255));
-        g2.drawString(mouseAlgo != null ? mouseAlgo.getProfileName() : "Default", x + 60, y + 124);
-
-        // Anti-ban row
-        g2.setColor(new Color(120, 120, 120));
-        g2.drawString("AB", x + 12, y + 140);
-        g2.setColor(new Color(255, 180, 50));
-        String abText;
-        if (lastAntiBanTime == 0) {
-            abText = "None yet";
-        } else {
-            long ago = (System.currentTimeMillis() - lastAntiBanTime) / 1000;
-            abText = lastAntiBan + " (" + ago + "s ago)";
-        }
-        String displayAb = abText.length() > 26 ? abText.substring(0, 26) + ".." : abText;
-        g2.drawString(displayAb, x + 60, y + 140);
-
-        // Anti-ban count on the right
-        g2.setFont(new Font("Arial", Font.BOLD, 11));
-        g2.setColor(new Color(255, 180, 50));
-        g2.drawString("#" + antiBanCount, x + w - 38, y + 140);
-
-        // Progress bar
-        int barX = x + 12;
-        int barY = y + 150;
-        int barW = w - 24;
-        int barH = 10;
-        g2.setColor(new Color(40, 40, 40));
-        g2.fillRoundRect(barX, barY, barW, barH, 5, 5);
+        // ── PROGRESS BAR (full-width accent) ──
+        int barX = x;
+        int barY = y + 44;
+        int barW = w;
+        int barH = 6;
+        g2.setColor(new Color(30, 30, 30));
+        g2.fillRect(barX, barY, barW, barH);
         if (progress > 0) {
-            g2.setColor(new Color(0, 200, 83));
-            g2.fillRoundRect(barX, barY, Math.max((int)(barW * progress), 5), barH, 5, 5);
+            int fillW = Math.max((int)(barW * progress), 3);
+            g2.setColor(new Color(0, 190, 80));
+            g2.fillRect(barX, barY, fillW, barH);
+            g2.setColor(new Color(0, 220, 100, 60));
+            g2.fillRect(barX + fillW - 12, barY, 12, barH);
         }
-        g2.setColor(new Color(0, 200, 83, 50));
-        g2.drawRoundRect(barX, barY, barW, barH, 5, 5);
+
+        // ── PROGRESS TEXT ──
+        g2.setFont(new Font("Arial", Font.BOLD, 24));
+        g2.setColor(new Color(0, 210, 90));
+        String pctStr = pct + "%";
+        int pctW = g2.getFontMetrics().stringWidth(pctStr);
+        g2.drawString(pctStr, x + pad, y + 78);
+
+        g2.setFont(new Font("Arial", Font.PLAIN, 11));
+        g2.setColor(new Color(120, 120, 120));
+        g2.drawString("Step " + currentStep + " / " + totalSteps, x + pad + pctW + 8, y + 78);
+
+        // Time on the right
+        g2.setFont(new Font("Arial", Font.BOLD, 14));
+        g2.setColor(new Color(220, 220, 220));
+        int timeW = g2.getFontMetrics().stringWidth(timeStr);
+        g2.drawString(timeStr, x + w - pad - timeW, y + 76);
+
+        // ── CURRENT ACTION (highlighted strip) ──
+        g2.setColor(new Color(22, 22, 22));
+        g2.fillRoundRect(x + pad - 2, y + 86, w - pad * 2 + 4, 20, 6, 6);
+        g2.setColor(new Color(180, 120, 50, 40));
+        g2.drawRoundRect(x + pad - 2, y + 86, w - pad * 2 + 4, 20, 6, 6);
+        g2.setFont(new Font("Arial", Font.BOLD, 11));
+        g2.setColor(new Color(255, 255, 255));
+        String displayAction = currentAction.length() > 30 ? currentAction.substring(0, 30) + ".." : currentAction;
+        g2.drawString(displayAction, x + pad + 6, y + 100);
+
+        // ── STATS TABLE ──
+        int tableX = x + 6;
+        int tableW = w - 12;
+        int rowH = 18;
+        int tableY = y + 112;
+        int valX = x + 72;
+        int col2LabelX = x + w / 2 + 6;
+        int col2ValX = x + w / 2 + 42;
+
+        // Row 1: Account + Anti-ban (darker bg)
+        g2.setColor(new Color(20, 20, 20, 200));
+        g2.fillRoundRect(tableX, tableY, tableW, rowH, 4, 4);
+
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        g2.setColor(new Color(140, 140, 140));
+        g2.drawString("ACCOUNT", tableX + 8, tableY + 13);
+        String modeStr = ironmanMode == 1 ? "Ironman" : "Normal";
+        g2.setColor(ironmanMode == 1 ? new Color(220, 180, 120) : new Color(180, 180, 180));
+        g2.drawString(modeStr, valX, tableY + 13);
+
+        g2.setColor(new Color(140, 140, 140));
+        g2.drawString("AB", col2LabelX, tableY + 13);
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        g2.setColor(new Color(255, 180, 50));
+        g2.drawString(String.valueOf(antiBanCount), col2ValX, tableY + 13);
+
+        // Row 2: Mouse + Varp (no bg, alternating)
+        int row2Y = tableY + rowH + 2;
+
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        g2.setColor(new Color(140, 140, 140));
+        g2.drawString("MOUSE", tableX + 8, row2Y + 13);
+        String profileName = mouseAlgo != null ? mouseAlgo.getProfileName() : "Default";
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        if ("Slow".equals(profileName)) g2.setColor(new Color(100, 180, 255));
+        else if ("Fast".equals(profileName)) g2.setColor(new Color(255, 140, 80));
+        else g2.setColor(new Color(200, 200, 200));
+        g2.drawString(profileName, valX, row2Y + 13);
+
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        g2.setColor(new Color(140, 140, 140));
+        g2.drawString("VARP", col2LabelX, row2Y + 13);
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        g2.setColor(new Color(100, 150, 220));
+        g2.drawString(String.valueOf(lastVarp), col2ValX, row2Y + 13);
+
+        // Row 3: Last AB action (full width, subtle)
+        int row3Y = row2Y + rowH + 2;
+        g2.setColor(new Color(20, 20, 20, 200));
+        g2.fillRoundRect(tableX, row3Y, tableW, rowH, 4, 4);
+
+        if (lastAntiBanTime > 0) {
+            long ago = (System.currentTimeMillis() - lastAntiBanTime) / 1000;
+            g2.setFont(new Font("Arial", Font.BOLD, 9));
+            g2.setColor(new Color(130, 130, 130));
+            g2.drawString("LAST AB", tableX + 8, row3Y + 12);
+            g2.setFont(new Font("Arial", Font.PLAIN, 9));
+            g2.setColor(new Color(100, 100, 100));
+            String abDisplay = lastAntiBan + " (" + ago + "s ago)";
+            if (abDisplay.length() > 26) abDisplay = abDisplay.substring(0, 26) + "..";
+            g2.drawString(abDisplay, tableX + 56, row3Y + 12);
+        } else {
+            g2.setColor(new Color(55, 55, 55));
+            g2.drawString("No anti-ban actions yet", tableX + 8, row3Y + 12);
+        }
     }
 
     @Override
@@ -1493,7 +1402,7 @@ public class Main extends AbstractScript {
             if (STEP_VARPS[i] <= lastVarp) currentStep = i + 1;
         }
         Logger.log("========================================");
-        Logger.log("  Bussin Tut - Final Report");
+        Logger.log("  Nutty Tutorial Island - Final Report");
         Logger.log("========================================");
         Logger.log("  Runtime:    " + timeStr);
         Logger.log("  Last Varp:  " + lastVarp);
@@ -1522,14 +1431,29 @@ public class Main extends AbstractScript {
         logAntiBan("Short AFK");
         if (random.nextInt(100) < 50) {
             int side = random.nextInt(4);
-            if (side == 0) Mouse.move(new Point(-5 - random.nextInt(10), random.nextInt(500)));
-            else if (side == 1) Mouse.move(new Point(765 + random.nextInt(10), random.nextInt(500)));
-            else if (side == 2) Mouse.move(new Point(random.nextInt(760), -5 - random.nextInt(10)));
-            else Mouse.move(new Point(random.nextInt(760), 505 + random.nextInt(10)));
+            if (side == 0) Mouse.move(new Point(-5 - random.nextInt(10), random.nextInt(SCREEN_H)));
+            else if (side == 1) Mouse.move(new Point(SCREEN_W + random.nextInt(10), random.nextInt(SCREEN_H)));
+            else if (side == 2) Mouse.move(new Point(random.nextInt(SCREEN_W), -5 - random.nextInt(10)));
+            else Mouse.move(new Point(random.nextInt(SCREEN_W), SCREEN_H + random.nextInt(10)));
             gaussianSleep(8000, 3000, 5000);
             Mouse.move(new Point(200 + random.nextInt(360), 100 + random.nextInt(250)));
         } else {
             gaussianSleep(6000, 2000, 4000);
+        }
+    }
+
+    private void handleDialogue(int varp) {
+        while (Dialogues.inDialogue()) {
+            if (PlayerSettings.getConfig(281) != varp) break;
+            if (Dialogues.canContinue()) {
+                Dialogues.clickContinue();
+                dialoguePause();
+            } else if (Dialogues.getOptions() != null) {
+                Dialogues.chooseOption(1);
+                dialoguePause();
+            } else {
+                gaussianSleep(450, 80, 350);
+            }
         }
     }
 
@@ -1577,10 +1501,10 @@ public class Main extends AbstractScript {
         } else if (roll < 32) {
             logAntiBan("Mouse off screen");
             int side = random.nextInt(4);
-            if (side == 0) Mouse.move(new Point(-5 - random.nextInt(10), random.nextInt(500)));
-            else if (side == 1) Mouse.move(new Point(765 + random.nextInt(10), random.nextInt(500)));
-            else if (side == 2) Mouse.move(new Point(random.nextInt(760), -5 - random.nextInt(10)));
-            else Mouse.move(new Point(random.nextInt(760), 505 + random.nextInt(10)));
+            if (side == 0) Mouse.move(new Point(-5 - random.nextInt(10), random.nextInt(SCREEN_H)));
+            else if (side == 1) Mouse.move(new Point(SCREEN_W + random.nextInt(10), random.nextInt(SCREEN_H)));
+            else if (side == 2) Mouse.move(new Point(random.nextInt(SCREEN_W), -5 - random.nextInt(10)));
+            else Mouse.move(new Point(random.nextInt(SCREEN_W), SCREEN_H + random.nextInt(10)));
             gaussianSleep(2500, 800, 1000);
             Mouse.move(new Point(200 + random.nextInt(360), 100 + random.nextInt(250)));
         }
@@ -1597,8 +1521,8 @@ public class Main extends AbstractScript {
         Point pos = Mouse.getPosition();
         int dx = random.nextInt(30) - 15;
         int dy = random.nextInt(30) - 15;
-        int newX = Math.max(5, Math.min(760, pos.x + dx));
-        int newY = Math.max(5, Math.min(500, pos.y + dy));
+        int newX = Math.max(5, Math.min(SCREEN_W - 5, pos.x + dx));
+        int newY = Math.max(5, Math.min(SCREEN_H - 3, pos.y + dy));
         Mouse.move(new Point(newX, newY));
     }
 
@@ -1607,36 +1531,24 @@ public class Main extends AbstractScript {
         Point pos = Mouse.getPosition();
         int dx = random.nextInt(10) - 5;
         int dy = random.nextInt(10) - 5;
-        int newX = Math.max(5, Math.min(760, pos.x + dx));
-        int newY = Math.max(5, Math.min(500, pos.y + dy));
+        int newX = Math.max(5, Math.min(SCREEN_W - 5, pos.x + dx));
+        int newY = Math.max(5, Math.min(SCREEN_H - 3, pos.y + dy));
         Mouse.move(new Point(newX, newY));
     }
 
     private void postClickIdle() {
         int roll = random.nextInt(100);
-        if (roll < 30) {
+        if (roll < 35) {
             // Small drift away from click position
             Point pos = Mouse.getPosition();
             int dx = random.nextInt(80) - 40;
             int dy = random.nextInt(80) - 40;
-            int newX = Math.max(5, Math.min(760, pos.x + dx));
-            int newY = Math.max(5, Math.min(500, pos.y + dy));
+            int newX = Math.max(5, Math.min(SCREEN_W - 5, pos.x + dx));
+            int newY = Math.max(5, Math.min(SCREEN_H - 3, pos.y + dy));
             gaussianSleep(400, 150, 350);
             Mouse.move(new Point(newX, newY));
-        } else if (roll < 45) {
-            // Move toward inventory area
-            int newX = 580 + random.nextInt(60);
-            int newY = 230 + random.nextInt(100);
-            gaussianSleep(500, 200, 350);
-            Mouse.move(new Point(newX, newY));
-        } else if (roll < 55) {
-            // Move toward minimap area
-            int newX = 620 + random.nextInt(50);
-            int newY = 20 + random.nextInt(60);
-            gaussianSleep(500, 200, 350);
-            Mouse.move(new Point(newX, newY));
         }
-        // 45% - do nothing, leave mouse where it is
+        // 65% - do nothing, leave mouse where it is
     }
 
     private int handleCharacterCreation() {
