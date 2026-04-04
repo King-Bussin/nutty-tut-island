@@ -1289,7 +1289,7 @@ public class Main extends AbstractScript {
         double progress = (double) currentStep / totalSteps;
 
         int x = 10;
-        int y = 200;
+        int y = 180;
         int w = 240;
         int h = 154;
 
