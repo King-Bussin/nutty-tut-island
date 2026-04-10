@@ -11,6 +11,9 @@ out/
 .idea/
 *.iml
 .vscode/
+.classpath
+.project
+.settings/
 
 # OS files
 .DS_Store
